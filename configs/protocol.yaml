@@ -1,0 +1,41 @@
+# Registered protocol for DTRA-103306 (frozen before locked-test access).
+dataset:
+  archive: chestmnist_64.npz
+  source: https://zenodo.org/records/10519652   # MedMNIST+ v3.0 (CC BY 4.0)
+  md5: 9de6cd0b934ebb5b7426cfba5efbae16
+  splits: {train: 78468, val: 11219, test: 22433}
+  n_labels: 14
+labels: [atelectasis, cardiomegaly, effusion, infiltration, mass, nodule,
+         pneumonia, pneumothorax, consolidation, edema, emphysema, fibrosis,
+         pleural_thickening, hernia]
+preprocessing:
+  normalise: train_mean_std            # single mean/std from training pixels only
+  augmentation:
+    horizontal_flip_p: 0.5
+    cyclic_shift_px: 2                 # executed deviation: torch.roll, -2..+2 both axes
+baselines:
+  b1_linear:
+    seed: 103306
+    lr: 0.05
+    momentum: 0.9
+    batch_size: 512
+    epochs: 5
+    weight_decay_grid: [1.0e-3, 1.0e-4, 1.0e-5]
+neural:
+  conditions: {B2: unweighted_bce, B3: pos_weighted_bce}
+  seeds: [20261, 20262, 20263]
+  optimiser: adamw
+  lr: 1.0e-3
+  weight_decay: 1.0e-4
+  batch_size: 64
+  eval_batch_size: 256
+  max_epochs: 20
+  grad_clip_norm: 5.0
+  scheduler: {monitor: val_macro_ap, factor: 0.5, patience: 2}
+  early_stop_patience: 4
+selection:
+  checkpoint_metric: val_macro_ap
+  thresholds: per_label_max_f1_highest_tie
+evaluation:
+  primary: macro_average_precision
+  bootstrap: {replicates: 2000, seed: 77103, cluster: patient_prefix, paired: true}
