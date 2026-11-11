@@ -1,5 +1,13 @@
 # DTRA-103306 — Positive-Class Weighting on ChestMNIST: Reproduction Package
 
+## Verification and artifact status
+
+This repository currently contains source code and a protocol configuration.
+The original experiment checkpoints, row-level manifests and prediction archives
+are not included. Synthetic smoke tests check software execution only; they do
+not reproduce or validate the manuscript's numerical results. See
+[REPRODUCIBILITY.md](REPRODUCIBILITY.md) for the remaining evidence and code gaps.
+
 Code for the study *"Does training-derived positive-class weighting improve
 multilabel chest-radiograph classification?"* (Digital Technologies Research and
 Applications, Article ID 103306). The study compares unweighted (B2) and
@@ -22,15 +30,15 @@ MD5 `9de6cd0b934ebb5b7426cfba5efbae16`.
 ## Reproduce
 ```bash
 pip install -r requirements.txt
-python -I src/model.py                           # architecture check (99,438 params)
-python -I src/data.py                            # (optional) import check
-python -I src/train.py --condition B1            # linear baseline + wd grid
+python src/model.py                           # architecture check (99,438 params)
+python src/data.py                            # import check only; does not audit data
+python src/train.py --condition B1            # linear baseline + wd grid
 for s in 20261 20262 20263; do
-  python -I src/train.py --condition B2 --seed $s
-  python -I src/train.py --condition B3 --seed $s
+  python src/train.py --condition B2 --seed $s
+  python src/train.py --condition B3 --seed $s
 done
-python -I src/evaluate.py --mapping source_mapping.csv   # single locked-test stage
-python -I tests/smoke_test.py                    # fast end-to-end check, no dataset
+python src/evaluate.py --mapping source_mapping.csv   # single locked-test stage
+python tests/smoke_test.py                    # fast end-to-end check, no dataset
 ```
 `source_mapping.csv` maps each row to its NIH source filename
 (`split,index,source_filename`); patient prefixes for the cluster bootstrap are
@@ -50,3 +58,34 @@ closely as possible.
 ## License
 Code: MIT (see LICENSE). The ChestMNIST data remain under their own CC BY 4.0
 licence and must be obtained from the official record above.
+
+## Check this code release
+
+Run these commands from the repository root, after installing the dependencies:
+
+```bash
+python tests/smoke_test.py
+python tests/test_checksums.py
+python make_checksums.py --verify SOURCE_CHECKSUMS.txt
+```
+
+`SOURCE_CHECKSUMS.txt` covers the distributed source and validation records.
+`validation/validation.json` records the actual synthetic checks performed for
+this code update and their software versions; it is not the original study
+environment. The `python` commands intentionally omit isolated mode (`-I`),
+because training/evaluation scripts import neighbouring modules under `src/`.
+
+Once authentic run outputs have been recovered and reviewed, verify their bytes
+separately:
+
+```bash
+python make_checksums.py outputs --output CHECKSUMS.txt
+python make_checksums.py --verify CHECKSUMS.txt
+```
+
+The generator fails for a missing or empty artifact directory. Do not describe a
+source checksum manifest as verification of unavailable experiment outputs.
+Keep newly generated results labelled as new runs until their provenance and
+agreement with the manuscript have been assessed. Large checkpoints should be
+archived separately with an immutable identifier and checksums. The `.gitignore`
+excludes local datasets and model outputs from accidental source commits.

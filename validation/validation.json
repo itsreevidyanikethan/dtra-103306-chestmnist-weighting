@@ -1,0 +1,53 @@
+{
+  "date": "2026-11-11",
+  "scope": "Synthetic smoke tests, integrity regression tests and command startup checks only. No real-dataset training, published-result reproduction or original-artifact validation.",
+  "python_version": "3.12.14",
+  "operating_system": "Linux",
+  "packages": {
+    "numpy": "2.3.5",
+    "scipy": "1.17.0",
+    "scikit-learn": "1.8.0",
+    "torch": "2.5.1+cpu",
+    "torchvision": "0.20.1+cpu",
+    "Pillow": "13.0.0",
+    "wfdb": "4.1.2",
+    "PyYAML": "6.0.3"
+  },
+  "thread_settings": {
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "checks": [
+    {
+      "command": "python tests/smoke_test.py",
+      "exit_code": 0,
+      "stdout": "SMOKE TEST PASSED\n",
+      "stderr": ""
+    },
+    {
+      "command": "python tests/test_checksums.py",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ".......\n----------------------------------------------------------------------\nRan 7 tests in 0.020s\n\nOK\n"
+    },
+    {
+      "command": "python src/model.py",
+      "exit_code": 0,
+      "stdout": "trainable parameters: 99438\narchitecture check passed\n",
+      "stderr": ""
+    },
+    {
+      "command": "python src/train.py --help",
+      "exit_code": 0,
+      "stdout": "usage: train.py [-h] --condition {B1,B2,B3} [--seed SEED] [--archive ARCHIVE]\n\noptions:\n  -h, --help            show this help message and exit\n  --condition {B1,B2,B3}\n  --seed SEED\n  --archive ARCHIVE\n",
+      "stderr": ""
+    },
+    {
+      "command": "python src/evaluate.py --help",
+      "exit_code": 0,
+      "stdout": "usage: evaluate.py [-h] [--archive ARCHIVE] --mapping MAPPING\n\noptions:\n  -h, --help         show this help message and exit\n  --archive ARCHIVE\n  --mapping MAPPING  official source-mapping CSV (split,index,source_filename)\n",
+      "stderr": ""
+    }
+  ],
+  "all_checks_passed": true
+}
