@@ -1,0 +1,20 @@
+{
+  "mapping_sha256": "d1aec190b1e5f0884a2b21bbd552694d052d27e5b80854e543cbda89983ef7e0",
+  "rows": {
+    "train": 78468,
+    "val": 11219,
+    "test": 22433
+  },
+  "patient_prefixes": {
+    "train": 21528,
+    "val": 3093,
+    "test": 6188
+  },
+  "cross_split_patient_prefix_count": 3,
+  "cross_split_patient_prefixes": [
+    "00005681",
+    "00027864",
+    "00028591"
+  ],
+  "source": "official MedMNIST source mapping; image_id normalised to source_filename"
+}

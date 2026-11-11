@@ -1,47 +1,46 @@
-# Reproducibility status for DTRA-103306
+# Reproducibility status — 11 November 2026
 
-The source package has been checked on synthetic data, including the
-99,438-parameter network assertion. The original experiment archive and exact
-reported results have not been verified. No real-dataset training or locked-test
-evaluation was performed for this maintenance update.
+The original experiment archive is missing. The new implementation and new
+outputs are not evidence that the original manuscript values were obtained.
 
-## Original evidence required
+## Real-data audit completed
 
-| Evidence | Status in this repository |
-|---|---|
-| Executed source and exact original software environment | Original-run provenance not verified; current source and validation environment are available |
-| Source mapping (`split,index,source_filename`) and split/audit records | Missing |
-| Six selected B2/B3 neural checkpoints and B1 baseline checkpoint | Missing |
-| Validation histories, thresholds and preprocessing records | Missing |
-| Locked-test labels, row identities and per-model/ensemble predictions | Missing |
-| Aggregate/per-label results and duplicate-sensitivity outputs | Missing |
-| Original 2,000 paired patient-prefix-cluster bootstrap replicates | Missing |
-| Original artifact checksums and persistent archive DOI | Missing |
+The official 64 x 64 archive was verified by MD5 and SHA-256. Its SHA-256 is
+`e28fbed21400c50040d6a4e51f379dce89bcb24819d3878c252ca78d52d92c3e`.
+The official MedMNIST row mapping was obtained and normalised without changing
+row order. There are 78,468/11,219/22,433 training/validation/test rows.
 
-## Implementation limits identified
+The audit found 112,094 unique decoded images, 25 duplicate groups involving
+51 rows, 3 cross-split duplicate groups, and 11 groups with conflicting labels.
+The mapping yields 6,188 test patient-prefix clusters and 3 prefixes that cross
+splits. These overlap findings limit an interpretation of the test data as
+fully independent patients. The new evaluation includes exclusion of test rows
+belonging to cross-split exact-image duplicate groups as a sensitivity analysis;
+it does not remove every possible source of patient leakage.
 
-`src/evaluate.py` evaluates the B2/B3 ensembles only; it does not evaluate the B0
-prevalence or B1 linear baseline, despite its broader module description.
-Validation threshold selection is implemented in `metrics.py` but not used or
-exported by the evaluation entry point. The duplicate-audit helper is not invoked
-by the documented training/evaluation commands, and the duplicate-exclusion
-sensitivity analysis is not implemented. The `source_mapping.csv` required by
-the evaluation command is absent. Test probabilities are saved without a
-companion export of test labels and row/cluster identities. The early-stop
-condition uses `stale > 4`, which stops after five non-improving epochs rather
-than the four stated in the configuration. Protocol YAML is documentation and
-is not loaded by the training scripts.
+## Implementation and execution
 
-These scientific implementation choices were not changed in the maintenance
-update. Agreement with the executed study must be resolved from the original
-source and outputs, not inferred from synthetic tests.
+The B0 prevalence baseline and the B1 validation-selected linear baseline have
+been fitted. CNN training was paused after 11 completed epochs of B2 seed 20261. Its full epoch resume snapshot is preserved. No CNN model has completed its planned training.
+The current snapshot status is recorded separately in `runs/`; unless
+`evaluation_complete.json` exists, no completed six-model locked-test experiment
+is claimed. Partial validation AP is not a test result.
 
-## Completion procedure
+The new pipeline implements individual-seed and ensemble output, thresholds
+frozen on validation labels, test row identities, duplicate sensitivity,
+calibration/classification metrics, paired cluster bootstrap and model hashes.
+The optimized threshold selector is tested against a brute-force reference.
+A synthetic interrupted/resumed run produces identical model parameters.
 
-Recover the original experiment directory, source mapping and checkpoint files.
-Verify the official data archive, mapping coverage and split audits, then check
-saved predictions, selected checkpoints, thresholds, baseline results, sensitivity
-analysis and bootstrap records against the manuscript. Resolve source/protocol
-differences before claiming exact reproduction. Generate artifact checksums and
-archive the permitted evidence with a persistent identifier. The present code
-release is not the complete reconstruction archive described in the manuscript.
+Early stopping now means four stale validation epochs; the supplied code used
+`stale > 4`. The new run uses channels-last float32 convolution for CPU
+execution. These are explicitly new-run choices. The documentary configuration
+is not automatically consumed by the original training entry points.
+
+## Remaining evidence and interpretation
+
+Completing a new six-model run cannot recover the missing original source,
+checkpoints or random states. Finish all training, freeze thresholds, evaluate
+once and archive authentic outputs before asserting new numerical conclusions.
+Do not copy manuscript values into an output file or describe synthetic tests
+as replication of study results. No new-run archive DOI has been issued.

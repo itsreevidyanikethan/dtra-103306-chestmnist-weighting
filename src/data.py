@@ -20,7 +20,7 @@ def md5(path, chunk=1 << 20):
     return h.hexdigest()
 
 
-def load_archive(path="chestmnist_64.npz", verify=True):
+def load_archive(path="chestmnist_64.npz", verify=True, splits=None):
     """Load the official MedMNIST+ archive and verify integrity.
 
     Download chestmnist_64.npz yourself from the official Zenodo record
@@ -35,7 +35,7 @@ def load_archive(path="chestmnist_64.npz", verify=True):
             )
     z = np.load(path)
     data = {}
-    for split in SPLITS:
+    for split in (SPLITS if splits is None else splits):
         x = z[f"{split}_images"]
         y = z[f"{split}_labels"].astype(np.int64)
         assert x.shape[0] == SPLITS[split], (split, x.shape)
@@ -74,7 +74,7 @@ def audit(data, out_path="outputs/audit.json"):
         "conflicting_label_groups": len(conflicting),
         "cross_split_detail": cross,
     }
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
     with open(out_path, "w") as f:
         json.dump(report, f, indent=2)
     return report

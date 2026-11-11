@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-11",
+  "python": "3.12.14",
+  "packages": {
+    "torch": "2.5.1+cpu",
+    "numpy": "2.3.5",
+    "scipy": "1.17.0",
+    "scikit-learn": "1.8.0"
+  },
+  "regression_tests": {
+    "command": "python tests/test_reconstruction.py",
+    "tests": 3,
+    "passed": true,
+    "log": ".Real-data integrity audit completed.\nModels and validation thresholds frozen.\n{\"observed\": -0.01715191579218922, \"ci95\": [-0.07211311587771971, 0.012418961659980344]}\n{\"observed\": -0.01715191579218922, \"ci95\": [-0.07211311587771971, 0.012418961659980344]}\n.B2 seed=20261 epoch=1 val_macro_ap=0.610813\nB2 seed=20261 epoch=2 val_macro_ap=0.612019\nB2 seed=20261 epoch=3 val_macro_ap=0.620312\nB2 seed=20261 epoch=4 val_macro_ap=0.644722\nB2 seed=20261 epoch=5 val_macro_ap=0.647122\nB2 seed=20261 epoch=6 val_macro_ap=0.646711\nB2 seed=20261 epoch=7 val_macro_ap=0.627391\nB2 seed=20261 epoch=8 val_macro_ap=0.626641\nB2 seed=20261 epoch=9 val_macro_ap=0.629153\nearly-stopping patience exhausted\nB2 seed=20261 epoch=1 val_macro_ap=0.610813\nB2 seed=20261 epoch=2 val_macro_ap=0.612019\nResuming B2 seed=20261 at epoch 3\n.\n----------------------------------------------------------------------\nRan 3 tests in 6.016s\n\nOK\nB2 seed=20261 epoch=3 val_macro_ap=0.620312\nB2 seed=20261 epoch=4 val_macro_ap=0.644722\nB2 seed=20261 epoch=5 val_macro_ap=0.647122\nB2 seed=20261 epoch=6 val_macro_ap=0.646711\nB2 seed=20261 epoch=7 val_macro_ap=0.627391\nB2 seed=20261 epoch=8 val_macro_ap=0.626641\nB2 seed=20261 epoch=9 val_macro_ap=0.629153\nearly-stopping patience exhausted\n"
+  },
+  "mapping_preparation": {
+    "verified_rows": 112120,
+    "normalised_sha256_matches_used_mapping": true
+  },
+  "real_dataset_audit": true,
+  "real_dataset_full_training": false,
+  "real_dataset_test_evaluation": false
+}

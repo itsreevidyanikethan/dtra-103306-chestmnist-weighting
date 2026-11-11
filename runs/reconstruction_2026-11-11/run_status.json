@@ -1,0 +1,32 @@
+{
+  "captured_at": "2026-11-11T06:38:26.147491+00:00",
+  "run_kind": "new_reconstruction",
+  "status": "paused; incomplete training",
+  "audit_complete": true,
+  "B0_fitted": true,
+  "B1_fitted": true,
+  "neural_models_required": 6,
+  "neural_models_complete": 0,
+  "partial_model": "B2_seed20261",
+  "completed_epochs": 11,
+  "best_validation_epoch": 10,
+  "best_validation_macro_ap": 0.1479673332467295,
+  "test_evaluation_performed": false,
+  "resume_contains": [
+    "model",
+    "optimizer",
+    "scheduler",
+    "best_state",
+    "numpy_rng",
+    "torch_rng",
+    "augmentation_rng",
+    "history"
+  ],
+  "resume_checkpoint_sha256": "2d29722512d682d689884f2294502ab2d3500f806386c8ec87ee99ee3078e675",
+  "resume_command": "python src/reconstruct.py --stage train --threads 4",
+  "after_training": [
+    "python src/reconstruct.py --stage freeze --threads 4",
+    "python src/reconstruct.py --stage evaluate --threads 4"
+  ],
+  "reason": "Partial CPU execution preserved; remaining multi-hour training has not been completed."
+}

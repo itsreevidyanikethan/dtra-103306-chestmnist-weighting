@@ -1,0 +1,25 @@
+{
+  "run_kind": "new_reconstruction",
+  "original_artifacts_available": false,
+  "archive_sha256": "e28fbed21400c50040d6a4e51f379dce89bcb24819d3878c252ca78d52d92c3e",
+  "archive": "chestmnist_64.npz",
+  "mapping_sha256": "d1aec190b1e5f0884a2b21bbd552694d052d27e5b80854e543cbda89983ef7e0",
+  "python": "3.12.14",
+  "packages": {
+    "numpy": "2.3.5",
+    "scipy": "1.17.0",
+    "scikit-learn": "1.8.0",
+    "torch": "2.5.1+cpu"
+  },
+  "threads": 1,
+  "seeds": [
+    20261,
+    20262,
+    20263
+  ],
+  "max_epochs": 20,
+  "early_stop_patience": 4,
+  "precision": "float32",
+  "memory_format": "channels_last",
+  "audit_note": "Test arrays are inspected for data integrity only before training; performance evaluation follows model freezing."
+}

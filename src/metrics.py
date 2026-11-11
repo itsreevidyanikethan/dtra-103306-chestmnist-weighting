@@ -27,13 +27,17 @@ def select_thresholds(y_val, p_val):
     """Per-label threshold maximising validation F1; highest threshold on ties (eq. 10)."""
     ts = []
     for j in range(y_val.shape[1]):
-        cand = np.unique(np.round(p_val[:, j], 6))
-        best_f1, best_t = -1.0, 0.5
-        for t in cand:
-            f1 = f1_score(y_val[:, j], (p_val[:, j] >= t).astype(int), zero_division=0)
-            if f1 > best_f1 or (f1 == best_f1 and t > best_t):
-                best_f1, best_t = f1, t
-        ts.append(float(best_t))
+        values = p_val[:, j]
+        order = np.argsort(values, kind='stable')
+        sorted_p = values[order]
+        positives = np.r_[0, np.cumsum(y_val[order, j])]
+        candidates = np.unique(np.round(values, 6))
+        cuts = np.searchsorted(sorted_p, candidates, side='left')
+        true_positive = positives[-1] - positives[cuts]
+        denominator = positives[-1] + len(values) - cuts
+        f1 = np.divide(2 * true_positive, denominator, out=np.zeros_like(candidates), where=denominator != 0)
+        best = np.flatnonzero(f1 == f1.max())[-1]
+        ts.append(float(candidates[best]))
     return ts
 
 

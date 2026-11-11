@@ -11,3 +11,13 @@ outputs/
 *.npy
 *.pt
 *.pth
+
+# Local reconstruction inputs and intermediates
+/source_mapping*.csv
+/manifest.csv
+/manifest_audit.json
+/features.npz.metadata.json
+/data_source.json
+*.joblib
+*.part
+*.tmp

@@ -1,13 +1,14 @@
-"""Train B1/B2/B3 exactly as registered; validation-frozen checkpoint selection.
+"""Train B1/B2/B3 for a new reconstruction; validation-frozen checkpoint selection.
 
 Usage:
-  python -I src/train.py --condition B2 --seed 20261
-  python -I src/train.py --condition B3 --seed 20262
-  python -I src/train.py --condition B1          # linear baseline + weight-decay grid
+  python src/train.py --condition B2 --seed 20261
+  python src/train.py --condition B3 --seed 20262
+  python src/train.py --condition B1          # linear baseline + weight-decay grid
 """
 import argparse
 import json
 import os
+import time
 
 import numpy as np
 import torch
@@ -59,40 +60,68 @@ def train_neural(condition, seed, data, out_dir="outputs"):
     xv_t = torch.tensor(standardise(xv, mean, std)).unsqueeze(1)
     yt_t = torch.tensor(yt, dtype=torch.float32)
 
-    model = CompactCNN()
+    model = CompactCNN().to(memory_format=torch.channels_last)
     crit = make_criterion(condition, yt)
     opt = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
     sched = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode="max", factor=0.5, patience=2)
     loader = DataLoader(AugmentedDataset(xt_t, yt_t, seed), batch_size=64, shuffle=True)
 
+    os.makedirs(out_dir, exist_ok=True)
+    resume_path = f'{out_dir}/{condition}_seed{seed}_resume.pt'
+    done_path = f'{out_dir}/{condition}_seed{seed}_complete.json'
+    if os.path.exists(done_path):
+        print(f'{condition} seed={seed} already complete; preserving existing run', flush=True)
+        return
     best_ap, best_epoch, best_state, stale = -1.0, -1, None, 0
-    history = []
-    for epoch in range(1, 21):
+    history = []; start_epoch = 1
+    if os.path.exists(resume_path):
+        saved = torch.load(resume_path, weights_only=False, map_location='cpu')
+        model.load_state_dict(saved['model']); opt.load_state_dict(saved['optimizer'])
+        sched.load_state_dict(saved['scheduler'])
+        best_ap = saved['best_ap']; best_epoch = saved['best_epoch']
+        best_state = saved['best_state']; stale = saved['stale']; history = saved['history']
+        np.random.set_state(saved['numpy_rng']); torch.set_rng_state(saved['torch_rng'])
+        loader.dataset.rng.bit_generator.state = saved['augmentation_rng']
+        start_epoch = saved['epoch'] + 1
+        print(f'Resuming {condition} seed={seed} at epoch {start_epoch}', flush=True)
+    for epoch in range(start_epoch, 21):
+        if stale >= 4: break
+        started = time.monotonic()
         model.train()
         for xb, yb in loader:
             opt.zero_grad()
-            loss = crit(model(xb), yb)
+            loss = crit(model(xb.contiguous(memory_format=torch.channels_last)), yb)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
             opt.step()
         val_ap = macro_ap(yv, predict(model, xv_t))
         sched.step(val_ap)
-        history.append({"epoch": epoch, "val_macro_ap": val_ap})
+        history.append({"epoch": epoch, "val_macro_ap": val_ap, "seconds": time.monotonic() - started})
         print(f"{condition} seed={seed} epoch={epoch} val_macro_ap={val_ap:.6f}")
         if val_ap > best_ap:
             best_ap, best_epoch, stale = val_ap, epoch, 0
             best_state = {k: v.clone() for k, v in model.state_dict().items()}
         else:
             stale += 1
-            if stale > 4:
+            if stale >= 4:
                 print("early-stopping patience exhausted")
-                break
 
-    os.makedirs(out_dir, exist_ok=True)
+        snapshot = {'epoch': epoch, 'model': model.state_dict(), 'optimizer': opt.state_dict(),
+                    'scheduler': sched.state_dict(), 'best_ap': best_ap, 'best_epoch': best_epoch,
+                    'best_state': best_state, 'stale': stale, 'history': history,
+                    'numpy_rng': np.random.get_state(), 'torch_rng': torch.get_rng_state(),
+                    'augmentation_rng': loader.dataset.rng.bit_generator.state}
+        torch.save(snapshot, resume_path + '.tmp'); os.replace(resume_path + '.tmp', resume_path)
     torch.save(best_state, f"{out_dir}/{condition}_seed{seed}.pt")
+    model.load_state_dict(best_state)
+    np.save(f'{out_dir}/{condition}_seed{seed}_val_probs.npy', predict(model, xv_t))
     with open(f"{out_dir}/{condition}_seed{seed}_history.json", "w") as f:
         json.dump({"best_epoch": best_epoch, "best_val_macro_ap": best_ap,
                    "preproc": {"mean": mean, "std": std}, "history": history}, f, indent=2)
+    with open(done_path, 'w') as f:
+        json.dump({'condition': condition, 'seed': seed, 'epochs_run': len(history),
+                   'best_epoch': best_epoch, 'run_kind': 'new_reconstruction',
+                   'memory_format': 'channels_last', 'precision': 'float32'}, f, indent=2)
 
 
 def train_linear(data, out_dir="outputs"):
@@ -121,6 +150,8 @@ def train_linear(data, out_dir="outputs"):
     best = max(results, key=lambda k: results[k]["val_macro_ap"])
     os.makedirs(out_dir, exist_ok=True)
     torch.save(results[best]["state"], f"{out_dir}/B1_wd{best:g}.pt")
+    lin.load_state_dict(results[best]['state'])
+    np.save(f'{out_dir}/B1_val_probs.npy', predict(lin, xv_t))
     with open(f"{out_dir}/B1_selection.json", "w") as f:
         json.dump({"selected_weight_decay": best,
                    "grid": {str(k): v["val_macro_ap"] for k, v in results.items()}}, f, indent=2)
@@ -131,10 +162,13 @@ if __name__ == "__main__":
     ap.add_argument("--condition", choices=["B1", "B2", "B3"], required=True)
     ap.add_argument("--seed", type=int, default=None)
     ap.add_argument("--archive", default="chestmnist_64.npz")
+    ap.add_argument('--out', default='outputs')
+    ap.add_argument('--threads', type=int, default=2)
     a = ap.parse_args()
-    data = load_archive(a.archive)
+    torch.set_num_threads(a.threads)
+    data = load_archive(a.archive, splits=['train', 'val'])
     if a.condition == "B1":
-        train_linear(data)
+        train_linear(data, out_dir=a.out)
     else:
         assert a.seed in (20261, 20262, 20263), "registered seeds only"
-        train_neural(a.condition, a.seed, data)
+        train_neural(a.condition, a.seed, data, out_dir=a.out)
